@@ -1,10 +1,7 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-
-const createQueryProcessor = queries => ({
-  runQuery: (type, params) => queries.find(q => q.type === type).handler(params)
-});
+const cqrs = require("./react-cqrs-server");
 
 const queries = [
   {
@@ -13,16 +10,10 @@ const queries = [
   }
 ];
 
-const queryProcessor = createQueryProcessor(queries);
-
-const withQuery = (queryProcessor, type) => (req, res) => {
-  const { query } = req;
-
-  res.send(queryProcessor.runQuery(query.type, query));
-};
+const queryProcessor = cqrs.createQueryProcessor(queries);
 
 app.use(cors());
 
-app.get("/", withQuery(queryProcessor, "GET_USER_NAME_QUERY"));
+app.get("/", cqrs.withQuery(queryProcessor, "GET_USER_NAME_QUERY"));
 
 app.listen(9000, () => console.log("Example app listening on port 9000!"));
