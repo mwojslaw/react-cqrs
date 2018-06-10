@@ -11,11 +11,15 @@ const getUserNameQuery = ({ userId }) => ({
   id: userId
 });
 
-const AppWithQuery = withQuery(getUserNameQuery)(App);
+const UserQuery = withQuery(getUserNameQuery)(({ data, children }) =>
+  children({ data })
+);
+
+const User = ({ name }) => <div>{name}</div>;
 
 ReactDOM.render(
   <ClientContext.Provider value={createClient(9000)}>
-    <AppWithQuery userId="1" />
+    <UserQuery userId={1}>{({ data }) => <User name={data} />}</UserQuery>
   </ClientContext.Provider>,
   document.getElementById("root")
 );
