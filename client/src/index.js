@@ -2,24 +2,63 @@ import React, { Component, Fragment } from "react";
 import ReactDOM from "react-dom";
 import { createClient, withQuery, ClientContext } from "./react-cqrs-client";
 
-const App = ({ data }) => <div>hello {data}</div>;
+const GET_TODO_ITEMS_QUERY = "GET_TODO_ITEMS_QUERY";
 
-const GET_USER_NAME_QUERY = "GET_USER_NAME_QUERY";
-
-const getUserNameQuery = ({ userId }) => ({
-  type: GET_USER_NAME_QUERY,
-  id: userId
+const getTodoItemsQuery = ({ status }) => ({
+  type: GET_TODO_ITEMS_QUERY,
+  status
 });
 
-const UserQuery = withQuery(getUserNameQuery)(({ data, children }) =>
-  children({ data })
+const TodoItemsQuery = withQuery(getTodoItemsQuery)(
+  ({ data, inProgress, children }) => children({ data, inProgress })
 );
 
-const User = ({ name }) => <div>{name}</div>;
+const TodoItem = ({ text, completed }) => (
+  <div>
+    {text} - {completed ? "v" : "x"}
+  </div>
+);
+
+class TodoItems extends Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      status: "all"
+    };
+  }
+
+  setStatus(status) {
+    this.setState({
+      status
+    });
+  }
+
+  render() {
+    return (
+      <div>
+        <TodoItemsQuery status={this.state.status}>
+          {({ data, inProgress }) =>
+            inProgress
+              ? "Loading"
+              : data.map(todoItem => (
+                  <TodoItem key={todoItem.id} {...todoItem} />
+                ))
+          }
+        </TodoItemsQuery>
+        <button onClick={() => this.setStatus("all")}>All</button>
+        <button onClick={() => this.setStatus("completed")}>Completed</button>
+        <button onClick={() => this.setStatus("uncompleted")}>
+          Uncompleted
+        </button>
+      </div>
+    );
+  }
+}
 
 ReactDOM.render(
   <ClientContext.Provider value={createClient(9000)}>
-    <UserQuery userId={1}>{({ data }) => <User name={data} />}</UserQuery>
+    <TodoItems />
   </ClientContext.Provider>,
   document.getElementById("root")
 );

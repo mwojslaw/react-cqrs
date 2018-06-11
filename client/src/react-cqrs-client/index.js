@@ -3,23 +3,12 @@ import React, { Component } from "react";
 export const ClientContext = React.createContext("react-cqrs");
 
 export const createClient = port => ({
-  runQuery: (query, done, error) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open(
-      "GET",
+  runQuery: (query, done, error) =>
+    fetch(
       `http://localhost:${port}?${Object.keys(query)
         .map(key => `${key}=${query[key]}`)
         .join("&")}`
-    );
-
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState == XMLHttpRequest.DONE && xhr.status == 200) {
-        done(xhr.response);
-      }
-    };
-
-    xhr.send();
-  }
+    ).then(response => response.json())
 });
 
 export const withQuery = query => WrappedComponent => {
@@ -28,20 +17,34 @@ export const withQuery = query => WrappedComponent => {
       super(props);
 
       this.state = {
-        data: undefined
+        data: undefined,
+        inProgress: true
       };
     }
-    componentDidMount() {
+
+    runQuery() {
       const { client } = this.props;
-      client.runQuery(query(this.props), response => {
-        this.setState({
-          data: response
-        });
+      this.setState({
+        inProgress: true
       });
+      client.runQuery(query(this.props)).then(({ data }) =>
+        this.setState({
+          data,
+          inProgress: false
+        })
+      );
+    }
+
+    componentDidMount() {
+      this.runQuery();
+    }
+
+    componentDidUpdate(prevProps) {
+      if (prevProps !== this.props) this.runQuery();
     }
 
     render() {
-      return <WrappedComponent {...this.props} data={this.state.data} />;
+      return <WrappedComponent {...this.props} {...this.state} />;
     }
   }
 
