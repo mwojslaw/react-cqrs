@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const cqrs = require("./react-cqrs-server");
+const bodyParser = require("body-parser");
 
 const todoItems = [
   {
@@ -32,10 +33,24 @@ const queries = [
   }
 ];
 
+const commands = [
+  {
+    type: "SET_COMPLETED_TODOITEM_COMMAND",
+    handler: ({ id, completed }) => {
+      const todoItem = todoItems.find(todoItem => todoItem.id === id);
+      todoItem.completed = completed;
+    }
+  }
+];
+
 const queryProcessor = cqrs.createQueryProcessor(queries);
+const commandProcessor = cqrs.createCommandProcessor(commands);
 
 app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get("/", cqrs.withQuery(queryProcessor, "GET_TODO_ITEMS_QUERY"));
+app.get("/", cqrs.withQuery(queryProcessor));
+app.post("/", cqrs.withCommand(commandProcessor));
 
 app.listen(9000, () => console.log("Example app listening on port 9000!"));
