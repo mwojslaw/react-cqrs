@@ -1,20 +1,38 @@
 import React, { Component, Fragment } from "react";
 import ReactDOM from "react-dom";
-import { createClient, withQuery, ClientContext } from "./react-cqrs-client";
+import {
+  createClient,
+  withQuery,
+  ClientContext,
+  withCommand
+} from "./react-cqrs-client";
 
 const GET_TODO_ITEMS_QUERY = "GET_TODO_ITEMS_QUERY";
+const SET_COMPLETED_TODOITEM_COMMAND = "SET_COMPLETED_TODOITEM_COMMAND";
 
 const getTodoItemsQuery = ({ status }) => ({
   type: GET_TODO_ITEMS_QUERY,
   status
 });
 
+const setCompletedTodoItemCommand = ({ id, completed }) => ({
+  type: SET_COMPLETED_TODOITEM_COMMAND,
+  completed,
+  id
+});
+
 const TodoItemsQuery = withQuery(getTodoItemsQuery)(
-  ({ data, inProgress, children }) => children({ data, inProgress })
+  ({ data, inProgress, children, run }) => {
+    return children({ data, run, inProgress });
+  }
 );
 
-const TodoItem = ({ text, completed }) => (
-  <div>
+const SetCompletedTodoItemCommand = withCommand(setCompletedTodoItemCommand)(
+  ({ command, inProgress, children }) => children({ command, inProgress })
+);
+
+const TodoItem = ({ text, completed, onClick }) => (
+  <div style={{ marginBottom: 30 }} onClick={onClick}>
     {text} - {completed ? "v" : "x"}
   </div>
 );
@@ -38,11 +56,24 @@ class TodoItems extends Component {
     return (
       <div>
         <TodoItemsQuery status={this.state.status}>
-          {({ data, inProgress }) =>
+          {({ data, inProgress, run }) =>
             inProgress
               ? "Loading"
               : data.map(todoItem => (
-                  <TodoItem key={todoItem.id} {...todoItem} />
+                  <SetCompletedTodoItemCommand key={todoItem.id}>
+                    {({ command, inProgress }) => (
+                      <TodoItem
+                        onClick={() => {
+                          command({
+                            id: todoItem.id,
+                            completed: !todoItem.completed
+                          }).then(() => run({ status: this.state.status }));
+                        }}
+                        key={todoItem.id}
+                        {...todoItem}
+                      />
+                    )}
+                  </SetCompletedTodoItemCommand>
                 ))
           }
         </TodoItemsQuery>
