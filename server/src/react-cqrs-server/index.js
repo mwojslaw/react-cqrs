@@ -28,7 +28,7 @@ const cqrsMiddlewere = (commandProcessor, queryProcessor) => (
   } else if (req.path === "/command") {
     const { body } = req;
     res.send({
-      data: commandProcessor.runCommand(body.type, body)
+      data: commandProcessor.runCommand(body)
     });
   } else next();
 };
