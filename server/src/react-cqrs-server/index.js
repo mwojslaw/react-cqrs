@@ -1,5 +1,12 @@
 const createQueryProcessor = queries => ({
-  runQuery: (type, params) => queries.find(q => q.type === type).handler(params)
+  runQuery: (...q) =>
+    q.reduce(
+      (previous, c) => [
+        ...previous,
+        queries.find(x => x.type === c.type).handler({ ...c }, { previous })
+      ],
+      []
+    )
 });
 
 const createCommandProcessor = commands => ({
@@ -11,7 +18,7 @@ const withQuery = queryProcessor => (req, res) => {
   const { query } = req;
 
   res.send({
-    data: queryProcessor.runQuery(query.type, query)
+    data: queryProcessor.runQuery(...JSON.parse(query.query))
   });
 };
 

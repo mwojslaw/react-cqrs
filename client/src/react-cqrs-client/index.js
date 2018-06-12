@@ -3,12 +3,14 @@ import React, { Component } from "react";
 export const ClientContext = React.createContext("react-cqrs");
 
 export const createClient = port => ({
-  runQuery: query =>
-    fetch(
-      `http://localhost:${port}?${Object.keys(query)
-        .map(key => `${key}=${query[key]}`)
-        .join("&")}`
-    ).then(response => response.json()),
+  runQueries: (...queries) => {
+    const params = queries
+      .map(query => `query[]=${JSON.stringify(query)}`)
+      .join("&");
+    return fetch(`http://localhost:${port}?${params}`).then(response =>
+      response.json()
+    );
+  },
   runCommand: command =>
     fetch(`http://localhost:${port}`, {
       method: "POST",
@@ -17,7 +19,14 @@ export const createClient = port => ({
     }).then(response => response.json())
 });
 
-export const withQuery = query => WrappedComponent => {
+const without = propName => object =>
+  Object.keys(object)
+    .filter(key => key !== propName)
+    .reduce((pv, cv) => ({ ...pv, [cv]: object[cv] }), {});
+
+const withoutChildren = without("children");
+
+export const withQuery = (...queries) => WrappedComponent => {
   class Wrapper extends Component {
     constructor(props) {
       super(props);
@@ -28,31 +37,35 @@ export const withQuery = query => WrappedComponent => {
       };
     }
 
-    runQuery() {
+    runQueries() {
       const { client } = this.props;
       this.setState({
         inProgress: true
       });
-      client.runQuery(query(this.props)).then(({ data }) =>
+      client.runQueries(queries.map(q => q(this.props))).then(({ data }) =>
         this.setState({
-          data,
+          data: data.lenght > 1 ? data : data[0],
           inProgress: false
         })
       );
     }
 
     componentDidMount() {
-      this.runQuery();
+      this.runQueries();
     }
 
     componentDidUpdate(prevProps) {
-      if (prevProps !== this.props) this.runQuery();
+      if (
+        JSON.stringify(withoutChildren(prevProps)) !==
+        JSON.stringify(withoutChildren(this.props))
+      )
+        this.runQueries();
     }
 
     render() {
       return (
         <WrappedComponent
-          run={props => this.runQuery()}
+          run={props => this.runQueries()}
           {...this.props}
           {...this.state}
         />

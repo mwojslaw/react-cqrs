@@ -4,19 +4,29 @@ const cors = require("cors");
 const cqrs = require("./react-cqrs-server");
 const bodyParser = require("body-parser");
 
+const users = [
+  {
+    id: "1",
+    name: "Maciej"
+  }
+];
+
 const todoItems = [
   {
     id: "1",
+    userId: "1",
     text: "Item 1",
     completed: false
   },
   {
     id: "2",
+    userId: "1",
     text: "Item 2",
     completed: true
   },
   {
     id: "3",
+    userId: "1",
     text: "Item 3",
     completed: false
   }
@@ -25,11 +35,16 @@ const todoItems = [
 const queries = [
   {
     type: "GET_TODO_ITEMS_QUERY",
-    handler: ({ status }) =>
+    handler: ({ status, userId }) =>
       todoItems.filter(
         todoItem =>
-          status === "all" || todoItem.completed === (status === "completed")
+          todoItem.userId === userId &&
+          (status === "all" || todoItem.completed === (status === "completed"))
       )
+  },
+  {
+    type: "GET_USER_QUERY",
+    handler: ({ id }, { previous }) => users.find(u => u.id === id)
   }
 ];
 
