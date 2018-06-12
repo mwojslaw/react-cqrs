@@ -64,8 +64,6 @@ const commandProcessor = cqrs.createCommandProcessor(commands);
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
-app.get("/", cqrs.withQuery(queryProcessor));
-app.post("/", cqrs.withCommand(commandProcessor));
+app.use(cqrs.cqrsMiddlewere(commandProcessor, queryProcessor));
 
 app.listen(9000, () => console.log("Example app listening on port 9000!"));

@@ -7,12 +7,12 @@ export const createClient = port => ({
     const params = queries
       .map(query => `query[]=${JSON.stringify(query)}`)
       .join("&");
-    return fetch(`http://localhost:${port}?${params}`).then(response =>
+    return fetch(`http://localhost:${port}/query?${params}`).then(response =>
       response.json()
     );
   },
   runCommand: command =>
-    fetch(`http://localhost:${port}`, {
+    fetch(`http://localhost:${port}/command`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(command)

@@ -14,24 +14,27 @@ const createCommandProcessor = commands => ({
     commands.find(c => c.type === command.type).handler(command)
 });
 
-const withQuery = queryProcessor => (req, res) => {
-  const { query } = req;
-
-  res.send({
-    data: queryProcessor.runQuery(...JSON.parse(query.query))
-  });
-};
-
-const withCommand = commandProcessor => (req, res) => {
-  const { body } = req;
-  res.send({
-    data: commandProcessor.runCommand(body.type, body)
-  });
+const cqrsMiddlewere = (commandProcessor, queryProcessor) => (
+  req,
+  res,
+  next
+) => {
+  if (req.path === "/query") {
+    const { query } = req;
+    const data = queryProcessor.runQuery(...JSON.parse(query.query));
+    res.send({
+      data
+    });
+  } else if (req.path === "/command") {
+    const { body } = req;
+    res.send({
+      data: commandProcessor.runCommand(body.type, body)
+    });
+  } else next();
 };
 
 module.exports = {
-  withQuery,
-  withCommand,
   createQueryProcessor,
-  createCommandProcessor
+  createCommandProcessor,
+  cqrsMiddlewere
 };
