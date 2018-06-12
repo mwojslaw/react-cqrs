@@ -10,8 +10,8 @@ const createQueryProcessor = queries => ({
 });
 
 const createCommandProcessor = commands => ({
-  runCommand: (type, params) =>
-    commands.find(c => c.type === type).handler(params)
+  runCommand: command =>
+    commands.find(c => c.type === command.type).handler(command)
 });
 
 const withQuery = queryProcessor => (req, res) => {
